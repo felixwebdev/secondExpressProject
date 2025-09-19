@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test Messaging API</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    input, textarea { margin: 5px 0; padding: 8px; width: 300px; }
+    button { margin-top: 5px; padding: 8px 12px; }
+    .box { border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; width: 350px; }
+    pre { background: #f4f4f4; padding: 10px; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>Messaging API Test</h1>
+
+  <div class="box">
+    <h3>1. Login</h3>
+    <input id="email" placeholder="Email"><br>
+    <input id="password" type="password" placeholder="Password"><br>
+    <button onclick="login()">Login</button>
+    <pre id="loginResult"></pre>
+  </div>
+
+  <div class="box">
+    <h3>2. Send Message</h3>
+    <input id="recipient" placeholder="Recipient UserId"><br>
+    <textarea id="content" placeholder="Message content"></textarea><br>
+    <button onclick="sendMessage()">Send</button>
+    <pre id="sendResult"></pre>
+  </div>
+
+  <div class="box">
+    <h3>3. Get Conversation</h3>
+    <input id="chatUserId" placeholder="UserId to chat with"><br>
+    <button onclick="getConversation()">Load Conversation</button>
+    <pre id="conversationResult"></pre>
+  </div>
+
+  <script>
+    let token = "";
+
+    async function login() {
+      const username = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      try {
+        const res = await fetch("http://localhost:3000/api/users/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password }),
+          credentials: "include"         
+        });
+        const data = await res.json();
+        document.getElementById("loginResult").textContent = JSON.stringify(data, null, 2);
+
+        if (data.token) {
+          token = data.token;
+        }
+
+         localStorage.setItem("token", data.token);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function sendMessage() {
+      const recipient = document.getElementById("recipient").value;
+      const content = document.getElementById("content").value;
+
+      try {
+        const res = await fetch("http://localhost:3000/api/messages", {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({ recipient, content })
+        });
+        const data = await res.json();
+        document.getElementById("sendResult").textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function getConversation() {
+  const chatUserId = document.getElementById("chatUserId").value;
+
+  try {
+    const res = await fetch(`http://localhost:3000/api/messages/conversation/${chatUserId}`, {
+      method: "GET",
+      headers: { 
+        "Authorization": `Bearer ${token}`
+      }
+    });
+
+    const data = await res.json();
+
+    // Lấy mảng content từ data.data
+    const messages = data.data.map(msg => msg.content);
+
+    document.getElementById("conversationResult").textContent = messages.join("\n");
+
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+  </script>
+</body>
+</html>
